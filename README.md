@@ -213,7 +213,7 @@ python madewithml/train.py \
     --cpu-per-worker 3 \
     --gpu-per-worker 1 \
     --num-epochs 10 \
-    --batch-size 256 \
+    --batch-size 16 \
     --results-fp results/training_results.json
 ```
 
@@ -242,7 +242,7 @@ We'll use [MLflow](https://mlflow.org/) to track our experiments and store our m
 
 ```bash
 export MODEL_REGISTRY=$(python -c "from madewithml import config; print(config.MODEL_REGISTRY)")
-mlflow server -h 0.0.0.0 -p 8080 --backend-store-uri $MODEL_REGISTRY
+mlflow server -h 0.0.0.0 -p 8081 --backend-store-uri $MODEL_REGISTRY
 ```
 
 <details>
@@ -272,7 +272,8 @@ export HOLDOUT_LOC="https://raw.githubusercontent.com/GokuMohandas/Made-With-ML/
 python madewithml/evaluate.py \
     --run-id $RUN_ID \
     --dataset-loc $HOLDOUT_LOC \
-    --results-fp results/evaluation_results.json
+    --results-fp results/evaluation_results.json \
+    --checkpoint-path efs/TorchTrainer_2024-04-24_14-45-49/TorchTrainer_40465_00000_0_2024-04-24_14-45-49/checkpoint_000005
 ```
 ```json
 {
@@ -294,7 +295,9 @@ export RUN_ID=$(python madewithml/predict.py get-best-run-id --experiment-name $
 python madewithml/predict.py predict \
     --run-id $RUN_ID \
     --title "Transfer learning with transformers" \
-    --description "Using transformers for transfer learning on text classification tasks."
+    --description "Using transformers for transfer learning on text classification tasks." \
+    --checkpoint-path efs/TorchTrainer_2024-04-24_14-45-49/TorchTrainer_40465_00000_0_2024-04-24_14-45-49/checkpoint_000005
+
 ```
 ```json
 [{

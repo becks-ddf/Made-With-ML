@@ -1,0 +1,17 @@
+{
+	"ulid": "01HVQ702B9PK5WQ7YHCBN9CAQX",
+	"minTime": 1713362261079,
+	"maxTime": 1713362400000,
+	"stats": {
+		"numSamples": 983,
+		"numSeries": 788,
+		"numChunks": 788
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HVQ702B9PK5WQ7YHCBN9CAQX"
+		]
+	},
+	"version": 1
+}

@@ -14,12 +14,12 @@ def test_train_model(dataset_loc):
         experiment_name=experiment_name,
         dataset_loc=dataset_loc,
         train_loop_config=json.dumps(train_loop_config),
-        num_workers=6,
+        num_workers=4,
         cpu_per_worker=1,
         gpu_per_worker=0,
         num_epochs=2,
         num_samples=512,
-        batch_size=256,
+        batch_size=32,
         results_fp=None,
     )
     utils.delete_experiment(experiment_name=experiment_name)

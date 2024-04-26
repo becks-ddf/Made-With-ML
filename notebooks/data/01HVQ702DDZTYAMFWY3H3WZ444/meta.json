@@ -1,0 +1,17 @@
+{
+	"ulid": "01HVQ702DDZTYAMFWY3H3WZ444",
+	"minTime": 1713362400964,
+	"maxTime": 1713369600000,
+	"stats": {
+		"numSamples": 43279,
+		"numSeries": 824,
+		"numChunks": 899
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HVQ702DDZTYAMFWY3H3WZ444"
+		]
+	},
+	"version": 1
+}

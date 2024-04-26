@@ -8,6 +8,7 @@ import ray
 import ray.train.torch  # NOQA: F401 (imported but unused)
 import typer
 from ray.data import Dataset
+from ray.train import Checkpoint
 from sklearn.metrics import precision_recall_fscore_support
 from snorkel.slicing import PandasSFApplier, slicing_function
 from typing_extensions import Annotated
@@ -108,6 +109,7 @@ def get_slice_metrics(y_true: np.ndarray, y_pred: np.ndarray, ds: Dataset) -> Di
 @app.command()
 def evaluate(
     run_id: Annotated[str, typer.Option(help="id of the specific run to load from")] = None,
+    checkpoint_path: Annotated[str, typer.Option(help="checkpoint path to load")] = None,
     dataset_loc: Annotated[str, typer.Option(help="dataset (with labels) to evaluate on")] = None,
     results_fp: Annotated[str, typer.Option(help="location to save evaluation results to")] = None,
 ) -> Dict:  # pragma: no cover, eval workload
@@ -115,6 +117,7 @@ def evaluate(
 
     Args:
         run_id (str): id of the specific run to load from. Defaults to None.
+        checkpoint_path (str): checkpoint path to load from. Defaults to None.
         dataset_loc (str): dataset (with labels) to evaluate on.
         results_fp (str, optional): location to save evaluation results to. Defaults to None.
 
@@ -123,7 +126,10 @@ def evaluate(
     """
     # Load
     ds = ray.data.read_csv(dataset_loc)
-    best_checkpoint = predict.get_best_checkpoint(run_id=run_id)
+    if checkpoint_path:
+        best_checkpoint = Checkpoint.from_directory(checkpoint_path)
+    else:
+        best_checkpoint = predict.get_best_checkpoint(run_id=run_id)
     predictor = TorchPredictor.from_checkpoint(best_checkpoint)
 
     # y_true

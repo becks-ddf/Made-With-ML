@@ -8,6 +8,7 @@ import ray
 import typer
 from numpyencoder import NumpyEncoder
 from ray.air import Result
+from ray.train import Checkpoint
 from ray.train.torch.torch_checkpoint import TorchCheckpoint
 from typing_extensions import Annotated
 
@@ -69,7 +70,7 @@ class TorchPredictor:
     @classmethod
     def from_checkpoint(cls, checkpoint):
         metadata = checkpoint.get_metadata()
-        preprocessor = CustomPreprocessor(class_to_index=metadata["class_to_index"])
+        preprocessor = CustomPreprocessor(class_to_index=metadata.get("class_to_index") or {})
         model = FinetunedLLM.load(Path(checkpoint.path, "args.json"), Path(checkpoint.path, "model.pt"))
         return cls(preprocessor=preprocessor, model=model)
 
@@ -87,6 +88,7 @@ def predict_proba(
     Returns:
         List: list of predicted labels.
     """
+    print("dsdsds")
     preprocessor = predictor.get_preprocessor()
     preprocessed_ds = preprocessor.transform(ds)
     outputs = preprocessed_ds.map_batches(predictor.predict_proba)
@@ -136,6 +138,7 @@ def get_best_checkpoint(run_id: str) -> TorchCheckpoint:  # pragma: no cover, ml
 @app.command()
 def predict(
     run_id: Annotated[str, typer.Option(help="id of the specific run to load from")] = None,
+    checkpoint_path: Annotated[str, typer.Option(help="checkpoint path to load")] = None,
     title: Annotated[str, typer.Option(help="project title")] = None,
     description: Annotated[str, typer.Option(help="project description")] = None,
 ) -> Dict:  # pragma: no cover, tested with inference workload
@@ -143,6 +146,7 @@ def predict(
 
     Args:
         run_id (str): id of the specific run to load from. Defaults to None.
+        checkpoint_path (str): checkpoint path to load from. Defaults to None.
         title (str, optional): project title. Defaults to "".
         description (str, optional): project description. Defaults to "".
 
@@ -150,7 +154,10 @@ def predict(
         Dict: prediction results for the input data.
     """
     # Load components
-    best_checkpoint = get_best_checkpoint(run_id=run_id)
+    if checkpoint_path:
+        best_checkpoint = Checkpoint.from_directory(checkpoint_path)
+    else:
+        best_checkpoint = predict.get_best_checkpoint(run_id=run_id)
     predictor = TorchPredictor.from_checkpoint(best_checkpoint)
 
     # Predict

@@ -1,7 +1,7 @@
 import argparse
 import os
 from http import HTTPStatus
-from typing import Dict
+from typing import Dict, Optional
 
 import ray
 from fastapi import FastAPI
@@ -19,15 +19,19 @@ app = FastAPI(
 )
 
 
-@serve.deployment(num_replicas="1", ray_actor_options={"num_cpus": 8, "num_gpus": 0})
+@serve.deployment(num_replicas="1", ray_actor_options={"num_cpus": 6, "num_gpus": 0})
 @serve.ingress(app)
 class ModelDeployment:
-    def __init__(self, run_id: str, threshold: int = 0.9):
+    def __init__(self, run_id: Optional[str] = None, checkpoint_path: Optional[str] = None, threshold: int = 0.9):
         """Initialize the model."""
         self.run_id = run_id
+        self.checkpoint_path = checkpoint_path
         self.threshold = threshold
         mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)  # so workers have access to model registry
-        best_checkpoint = predict.get_best_checkpoint(run_id=run_id)
+        if checkpoint_path:
+            best_checkpoint = predict.Checkpoint.from_directory(checkpoint_path)
+        else:
+            best_checkpoint = predict.get_best_checkpoint(run_id=run_id)
         self.predictor = predict.TorchPredictor.from_checkpoint(best_checkpoint)
 
     @app.get("/")
@@ -60,6 +64,7 @@ class ModelDeployment:
         # Apply custom logic
         for i, result in enumerate(results):
             pred = result["prediction"]
+            result["probabilities"] = {k: float(v) for k, v in result["probabilities"].items()}
             prob = result["probabilities"]
             if prob[pred] < self.threshold:
                 results[i]["prediction"] = "other"
@@ -70,7 +75,8 @@ class ModelDeployment:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--run_id", help="run ID to use for serving.")
+    parser.add_argument("--checkpoint_path", help="checkpoint path to use for serving.")
     parser.add_argument("--threshold", type=float, default=0.9, help="threshold for `other` class.")
     args = parser.parse_args()
     ray.init(runtime_env={"env_vars": {"GITHUB_USERNAME": os.environ["GITHUB_USERNAME"]}})
-    serve.run(ModelDeployment.bind(run_id=args.run_id, threshold=args.threshold))
+    serve.run(ModelDeployment.bind(run_id=args.run_id, checkpoint_path=args.checkpoint_path, threshold=args.threshold))
