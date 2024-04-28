@@ -24,13 +24,13 @@ def test_tune_models(dataset_loc):
         experiment_name=experiment_name,
         dataset_loc=dataset_loc,
         initial_params=json.dumps(initial_params),
-        num_workers=6,
-        cpu_per_worker=1,
+        num_workers=2,
+        cpu_per_worker=2,
         gpu_per_worker=0,
         num_runs=num_runs,
         num_epochs=1,
         num_samples=512,
-        batch_size=256,
+        batch_size=32,
         results_fp=None,
     )
     utils.delete_experiment(experiment_name=experiment_name)
